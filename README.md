@@ -8,7 +8,6 @@
 
 ### Написано для Rambler, но можно поставить любой другой сервис:
 
-IMAP_SERVER = 'imap.rambler.ru'
 https://github.com/Underneach/Get-Mail-Code-Rambler/blob/3540f9192fcae0701d286f5c9d2d9051c63d1628/main.py#L209
 
 ### Сборка в EXE
