@@ -98,7 +98,7 @@ class Ui_MainWindow(object):
         self.Textline_code.setGeometry(QtCore.QRect(370, 105, 255, 40))
         font = QtGui.QFont()
         font.setFamily("Segoe UI Variable Small Semibol")
-        font.setPointSize(11)
+        font.setPointSize(12)
         font.setBold(True)
         font.setWeight(75)
         self.Textline_code.setFont(font)
@@ -189,16 +189,28 @@ class Ui_MainWindow(object):
         self.Select_proxy_button.setText(_translate("MainWindow", "Получить"))
 
     def get_code(self):
+
         if self.Textline_mail.text() == "":
             self.Textline_code.setText("Введите почту")
             return
         if self.Textline_regular.text() == "":
             self.Textline_code.setText("Введите регулярку")
             return
-        self.Textline_code.setText("Ожидайте")
-        mail_data = self.Textline_mail.text()
+
+        try:
+            split_string = self.Textline_mail.text().split(":")
+            USERNAME = split_string[0]
+            PASSWORD = split_string[1]
+        except IndexError:
+            self.Textline_code.setText("Неверные данные")
+            return
+
         regular_string = self.Textline_regular.text()
-        self.worker = GetCode(mail_data, regular_string)
+        IMAP_SERVER = 'imap.rambler.ru'
+
+        self.Textline_code.setText("Ожидайте")
+
+        self.worker = GetCode(USERNAME, PASSWORD, IMAP_SERVER, regular_string)
         self.worker.send_code.connect(self.set_code)
         self.worker.start()
 

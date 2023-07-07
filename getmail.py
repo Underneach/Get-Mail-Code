@@ -8,60 +8,67 @@ from PyQt5.QtCore import QThread, pyqtSignal
 class GetCode(QThread):
     send_code = pyqtSignal(str)
 
-    def __init__(self, mail_data, regular_string):
+    def __init__(self, USERNAME, PASSWORD, IMAP_SERVER, regular_string):
         super().__init__()
-        self.mail_data = mail_data
+        self.USERNAME = USERNAME
+        self.PASSWORD = PASSWORD
+        self.IMAP_SERVER = IMAP_SERVER
         self.regular_string = regular_string
 
+    def get_last_email_text(self, IMAP_SERVER, USERNAME, PASSWORD):
+        # Подключение к почтовому серверу
+        mail = imaplib.IMAP4_SSL(IMAP_SERVER)
+        mail.login(USERNAME, PASSWORD)
+
+        # Выбор почтового ящика (в данном случае - входящие)
+        mail.select('INBOX')
+
+        # Поиск последнего письма
+        result, data = mail.search(None, 'ALL')
+
+        # Проверка на пустую почту
+        if len(data[0].split()) == 0:
+            self.send_code.emit("Почтовый ящик пуст")
+            return None
+
+        last_email_id = data[0].split()[-1]
+        result, data = mail.fetch(last_email_id, '(RFC822)')
+
+        # Извлечение текста письма
+        raw_email = data[0][1]
+        email_message = email.message_from_bytes(raw_email)
+        text = ""
+
+        if email_message.is_multipart():
+            for part in email_message.walk():
+                if part.get_content_type() == 'text/plain':
+                    text = part.get_payload(decode=True).decode('utf-8')
+        else:
+            text = email_message.get_payload(decode=True).decode('utf-8')
+
+        # Закрытие соединения с почтовым сервером
+        mail.close()
+        mail.logout()
+
+        return text
+
     def run(self):
+
         try:
-            split_string = self.mail_data.split(":")
-            USERNAME = split_string[0]
-            PASSWORD = split_string[1]
-            IMAP_SERVER = 'imap.rambler.ru'
-        except IndexError:
-            self.send_code.emit("Неверные данные")
-            return
-        try:
-            # Подключение к почтовому серверу
-            mail = imaplib.IMAP4_SSL(IMAP_SERVER)
-            mail.login(USERNAME, PASSWORD)
-
-            # Выбор почтового ящика (в данном случае - входящие)
-            mail.select('INBOX')
-
-            # Поиск последнего письма
-            result, data = mail.search(None, 'ALL')
-            latest_email_id = data[0].split()[-1]
-            result, data = mail.fetch(latest_email_id, '(RFC822)')
-
-            # Извлечение текста письма
-            raw_email = data[0][1]
-            email_message = email.message_from_bytes(raw_email)
-            text = ""
-
-            if email_message.is_multipart():
-                for part in email_message.walk():
-                    if part.get_content_type() == 'text/plain':
-                        text = part.get_payload(decode=True).decode('utf-8')
-            else:
-                text = email_message.get_payload(decode=True).decode('utf-8')
+            email_text = self.get_last_email_text(self.IMAP_SERVER, self.USERNAME, self.PASSWORD)
 
             # Извлечение кода с помощью регулярного выражения
-            pattern = self.regular_string
-            match = re.search(pattern, text)
+            match = re.search(self.regular_string, email_text)
             if match:
+                # а вот тут ты очень оптимистично думаешь что переданная в конструктор регулярка будет иметь хоть одну группу
+                # (или что код будет именно в первой группе)
                 code = match.group(1)
                 self.send_code.emit(code)
             else:
                 self.send_code.emit("Код не найден.")
-
-            # Закрытие соединения с почтовым сервером
-            mail.close()
-            mail.logout()
-
         except imaplib.IMAP4_SSL.error as e:
             self.send_code.emit("Ошибка подключения")
+            print(e)
         except imaplib.IMAP4.error as e:
             self.send_code.emit("Неверные данные")
         except Exception as e:
