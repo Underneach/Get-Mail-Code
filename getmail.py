@@ -63,8 +63,6 @@ class GetCode(QThread):
             # Извлечение кода с помощью регулярного выражения
             match = re.search(self.regular_string, email_text)
             if match:
-                # а вот тут ты очень оптимистично думаешь что переданная в конструктор регулярка будет иметь хоть одну группу
-                # (или что код будет именно в первой группе)
                 code = match.group(1)
                 self.send_code.emit(code)
             else:
