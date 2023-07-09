@@ -28,8 +28,7 @@ class GetCode(QThread):
 
         # Проверка на пустую почту
         if len(data[0].split()) == 0:
-            self.send_code.emit("Почтовый ящик пуст")
-            return None
+            return "Empty"
 
         last_email_id = data[0].split()[-1]
         result, data = mail.fetch(last_email_id, '(RFC822)')
@@ -56,6 +55,10 @@ class GetCode(QThread):
 
         try:
             email_text = self.get_last_email_text(self.IMAP_SERVER, self.USERNAME, self.PASSWORD)
+
+            if email_text == "Empty":
+                self.send_code.emit("Почтовый ящик пуст")
+                return
 
             # Извлечение кода с помощью регулярного выражения
             match = re.search(self.regular_string, email_text)
