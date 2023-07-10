@@ -16,11 +16,12 @@ class GetCode(QThread):
         self.regular_string = regular_string
 
     def get_last_email_text(self, IMAP_SERVER, USERNAME, PASSWORD):
+
         # Подключение к почтовому серверу
         mail = imaplib.IMAP4_SSL(IMAP_SERVER)
         mail.login(USERNAME, PASSWORD)
 
-        # Выбор почтового ящика (в данном случае - входящие)
+        # Выбор почтового ящика
         mail.select('INBOX')
 
         # Поиск последнего письма
@@ -28,7 +29,9 @@ class GetCode(QThread):
 
         # Проверка на пустую почту
         if len(data[0].split()) == 0:
-            return "Empty"
+            mail.close()
+            mail.logout()
+            return None
 
         last_email_id = data[0].split()[-1]
         result, data = mail.fetch(last_email_id, '(RFC822)')
@@ -45,10 +48,8 @@ class GetCode(QThread):
         else:
             text = email_message.get_payload(decode=True).decode('utf-8')
 
-        # Закрытие соединения с почтовым сервером
         mail.close()
         mail.logout()
-
         return text
 
     def run(self):
@@ -56,21 +57,21 @@ class GetCode(QThread):
         try:
             email_text = self.get_last_email_text(self.IMAP_SERVER, self.USERNAME, self.PASSWORD)
 
-            if email_text == "Empty":
+            if email_text is None:
                 self.send_code.emit("Почтовый ящик пуст")
                 return
 
-            # Извлечение кода с помощью регулярного выражения
             match = re.search(self.regular_string, email_text)
+
             if match:
-                code = match.group(1)
+                code = match.group(1) if match.group(1) else match.group(0)
                 self.send_code.emit(code)
             else:
                 self.send_code.emit("Код не найден.")
-        except imaplib.IMAP4_SSL.error as e:
+
+        except imaplib.IMAP4_SSL.error:
             self.send_code.emit("Ошибка подключения")
-            print(e)
-        except imaplib.IMAP4.error as e:
+        except imaplib.IMAP4.error:
             self.send_code.emit("Неверные данные")
         except Exception as e:
             print(e)
