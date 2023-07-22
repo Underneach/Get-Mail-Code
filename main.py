@@ -1,7 +1,8 @@
 import os
-import sys
-import pyperclip
 import pkgutil
+import sys
+
+import pyperclip
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt, QTimer
 from getmail import GetCode
