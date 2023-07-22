@@ -1,14 +1,22 @@
 import os
+import sys
 import pyperclip
+import pkgutil
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt, QTimer
 from getmail import GetCode
 
 
+def resource_path(relative_path):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
+
 class Ui_MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        uic.loadUi("getmail.ui", self)
+        uic.loadUi(resource_path("gui.ui"), self)
 
         self.load_settings()
 
@@ -79,5 +87,6 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication([])
     window = Ui_MainWindow()
     window.setWindowFlags(Qt.WindowStaysOnTopHint)
+    window.setWindowIcon(QtGui.QIcon(resource_path("icon.ico")))
     window.show()
     app.exec_()
