@@ -10,6 +10,8 @@
     + Сохранение последних значений регулярки и IMAP после повторного запуска программы (AppData)
 
 
+### Скачать
+https://github.com/Underneach/Get-Mail-Code/releases
 
 
 ### Сборка в EXE
