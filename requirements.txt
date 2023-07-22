@@ -3,3 +3,4 @@ pyperclip
 imaplib
 email
 re
+pyinstaller
