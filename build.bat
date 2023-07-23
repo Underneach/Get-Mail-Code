@@ -1,0 +1,1 @@
+pyinstaller --clean --onefile --noconsole --noconfirm --add-data "gui.ui;." --add-data "icon.ico;." --icon icon.ico main.py
