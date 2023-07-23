@@ -81,8 +81,10 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
     def copy_code(self):
         code = self.Textline_code.text()
         pyperclip.copy(self.Textline_code.text())
+
         self.Textline_code.setEnabled(False)
         self.Textline_code.setText("Скопировано!")
+
         QTimer.singleShot(1000, lambda: self.Textline_code.setText(code))
         QTimer.singleShot(1000, lambda: self.Textline_code.setEnabled(True))
 
