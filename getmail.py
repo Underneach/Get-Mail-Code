@@ -2,11 +2,11 @@ import email
 import imaplib
 import re
 
-from PyQt5.QtCore import QThread, pyqtSignal
+from PySide6.QtCore import Signal, QThread
 
 
 class GetCode(QThread):
-    send_code = pyqtSignal(str)
+    send_code = Signal(str)
 
     def __init__(self, USERNAME, PASSWORD, IMAP_SERVER, regular_string):
         super().__init__()
@@ -15,10 +15,10 @@ class GetCode(QThread):
         self.IMAP_SERVER = IMAP_SERVER
         self.regular_string = regular_string
 
-    def get_last_email_text(self, IMAP_SERVER, USERNAME, PASSWORD):
+    def get_last_email_text(self, IMAP_SERVER, USERNAME, PASSWORD) -> str or None:
 
         # Подключение к почтовому серверу
-        mail = imaplib.IMAP4_SSL(IMAP_SERVER)
+        mail = imaplib.IMAP4_SSL(IMAP_SERVER, timeout=15)
         mail.login(USERNAME, PASSWORD)
 
         # Выбор почтового ящика
@@ -44,9 +44,23 @@ class GetCode(QThread):
         if email_message.is_multipart():
             for part in email_message.walk():
                 if part.get_content_type() == 'text/plain':
-                    text = part.get_payload(decode=True).decode('utf-8')
+                    try:
+                        text = part.get_payload(decode=True).decode('utf-8')
+                    except UnicodeDecodeError:
+                        try:
+                            text = part.get_payload(decode=True).decode('latin-1')
+                        except UnicodeDecodeError:
+                            self.send_code.emit("Ошибка декодирования")
+                            return
         else:
-            text = email_message.get_payload(decode=True).decode('utf-8')
+            try:
+                text = email_message.get_payload(decode=True).decode('utf-8')
+            except UnicodeDecodeError:
+                try:
+                    text = email_message.get_payload(decode=True).decode('latin-1')
+                except UnicodeDecodeError:
+                    self.send_code.emit("Ошибка декодирования")
+                    return
 
         mail.close()
         mail.logout()
@@ -65,7 +79,8 @@ class GetCode(QThread):
 
             if match:
                 code = match.group(1) if match.group(1) else match.group(0)
-                self.send_code.emit(code)
+                self.send_code.emit(code.strip()[:15].replace("\n", ""))
+
             else:
                 self.send_code.emit("Код не найден.")
 
@@ -74,4 +89,4 @@ class GetCode(QThread):
         except imaplib.IMAP4.error:
             self.send_code.emit("Неверные данные")
         except Exception as e:
-            print(e)
+            self.send_code.emit(f"Ошибка {e}")

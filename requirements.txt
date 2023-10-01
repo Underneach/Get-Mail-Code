@@ -1,6 +1,2 @@
-PyQt5
 pyperclip
-imaplib
-email
-re
-pyinstaller
+PySide6

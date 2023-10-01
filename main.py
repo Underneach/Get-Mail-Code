@@ -1,93 +1,99 @@
-import os
-import pkgutil
+import re
+import webbrowser
 import sys
 
 import pyperclip
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtCore import QTimer
+
+from load_ui import Load_UI, resource_path
 from getmail import GetCode
+from setting import Save_settings
 
 
-def resource_path(relative_path):
-    if hasattr(sys, "_MEIPASS"):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
-
-
-class Ui_MainWindow(QtWidgets.QMainWindow):
+class User_UI(QMainWindow):
     def __init__(self):
         super().__init__()
-        uic.loadUi(resource_path("gui.ui"), self)
+        self.app_version = "2.0"
+        Load_UI(self)
 
-        self.load_settings()
+    def closeEvent(self, event) -> None:
+        self.ui.setWindowTitle(f"GetCode {self.app_version} | rx580 LZT | Closing...")
+        self.ui.close()
+        event.accept()
 
-        self.Pushbutton.clicked.connect(self.get_code)
-        self.Textline_code.clicked.connect(self.copy_code)
+    def Create_Regexp(self) -> None:
+        print("create_regexp")
+        webbrowser.open("https://bablosoft.github.io/RegexpConstructor/")
 
-    def get_code(self):
+    def get_code(self) -> None:
 
-        self.save_settings()
+        self.ui.Textline_mail.textChanged.connect(lambda: self.ui.Textline_code.setText("..."))
+        self.ui.Textline_regular.currentTextChanged.connect(lambda: self.ui.Textline_code.setText("..."))
+        self.ui.Textline_imap.currentTextChanged.connect(lambda: self.ui.Textline_code.setText("..."))
 
-        if self.Textline_mail.text() == "":
-            self.Textline_code.setText("Введите почту")
+        if re.match(r".+@.+\:.+", self.ui.Textline_mail.text().strip()) is None:
+            self.ui.Textline_code.setText("Неверный формат Log:Pass")
             return
-        if self.Textline_regular.text() == "":
-            self.Textline_code.setText("Введите регулярку")
+        if re.match(r".+.+", str(self.ui.Textline_imap.currentText()).strip()) is None:
+            self.ui.Textline_code.setText("Введите imap")
             return
-        if self.Textline_imap.text() == "":
-            self.Textline_code.setText("Введите imap")
+        if len(str(self.ui.Textline_regular.currentText()).strip()) < 1:
+            self.ui.Textline_code.setText("Введите RegExp")
             return
 
         try:
-            split_string = self.Textline_mail.text().split(":")
+            split_string = self.ui.Textline_mail.text().strip().split(":")
             USERNAME = split_string[0]
             PASSWORD = split_string[1]
         except IndexError:
-            self.Textline_code.setText("Неверные данные")
+            self.ui.Textline_code.setText("Неверный формат Log:Pass")
             return
 
-        regular_string = self.Textline_regular.text()
-        IMAP_SERVER = self.Textline_imap.text()
+        regular_string = str(self.ui.Textline_regular.currentText()).strip()
+        IMAP_SERVER = str(self.ui.Textline_imap.currentText()).strip()
 
-        self.Textline_code.setText("Ожидайте")
-        self.Textline_code.setEnabled(False)
+        Save_settings(self, regular_string, IMAP_SERVER)
+
+        self.ui.Textline_code.setText("Ожидайте   ")
+        self.ui.Textline_code.setEnabled(False)
+        self.ui.setWindowTitle(f"GetCode {self.app_version} | rx580 LZT | Working...")
+        self.ui.Textline_code.setStyleSheet('background-color: #214340;'
+                                            'color: #247156;'
+                                            'border-radius: 10px;'
+                                            'padding-left: 4px;'
+                                            'padding-right: 4px;')
 
         self.worker = GetCode(USERNAME, PASSWORD, IMAP_SERVER, regular_string)
+        self.worker.send_code.connect(self.ui.setWindowTitle(f"GetCode {self.app_version} | rx580 LZT"))
+        self.worker.send_code.connect(self.set_active)
         self.worker.send_code.connect(self.set_code)
+
         self.worker.start()
 
-    def save_settings(self):
-        path = os.getenv('APPDATA')
-        with open(path + '\\settings.txt', 'w') as f:
-            f.write(self.Textline_regular.text() + '\n')
-            f.write(self.Textline_imap.text() + '\n')
+    def set_active(self) -> None:
+        self.ui.Textline_code.setStyleSheet('background-color: #2d5b57;'
+                                            'color: #37ae85;'
+                                            'border-radius: 10px;'
+                                            'padding-left: 4px;'
+                                            'padding-right: 4px;')
 
-    def load_settings(self):
-        try:
-            path = os.getenv('APPDATA')
-            with open(path + '\\settings.txt', 'r') as f:
-                self.Textline_regular.setText(f.readline()[:-1])
-                self.Textline_imap.setText(f.readline()[:-1])
-        except FileNotFoundError:
-            pass
+    def set_code(self, code: str) -> None:
+        self.ui.Textline_code.setText(code)
+        self.ui.Textline_code.setEnabled(True)
 
-    def set_code(self, code):
-        self.Textline_code.setEnabled(True)
-        self.Textline_code.setText(code)
+    def copy_code(self) -> None:
+        code = self.ui.Textline_code.text()
+        pyperclip.copy(self.ui.Textline_code.text())
 
-    def copy_code(self):
-        code = self.Textline_code.text()
-        pyperclip.copy(self.Textline_code.text())
-        self.Textline_code.setEnabled(False)
-        self.Textline_code.setText("Скопировано!")
-        QTimer.singleShot(1000, lambda: self.Textline_code.setText(code))
-        QTimer.singleShot(1000, lambda: self.Textline_code.setEnabled(True))
+        self.ui.Textline_code.setEnabled(False)
+        self.ui.Textline_code.setText("Скопировано")
+
+        QTimer.singleShot(1000, lambda: self.ui.Textline_code.setText(code))
+        QTimer.singleShot(1000, lambda: self.ui.Textline_code.setEnabled(True))
 
 
 if __name__ == '__main__':
-    app = QtWidgets.QApplication([])
-    window = Ui_MainWindow()
-    window.setWindowFlags(Qt.WindowStaysOnTopHint)
-    window.setWindowIcon(QtGui.QIcon(resource_path("icon.ico")))
-    window.show()
-    app.exec_()
+    app = QApplication(sys.argv)
+    window = User_UI()
+    app.exec()

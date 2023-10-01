@@ -1,0 +1,1 @@
+nuitka --onefile --standalone --remove-output --show-progress --windows-icon-from-ico=res\icon.ico --plugin-enable=pyside6 --include-data-file=res\gui.ui=res\gui.ui --include-data-file=res\icon.ico=res\icon.ico --windows-disable-console main.py
