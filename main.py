@@ -36,10 +36,10 @@ class User_UI(QMainWindow):
             self.ui.Textline_code.setText("Неверный формат Log:Pass")
             return
         if re.match(r".+.+", str(self.ui.Textline_imap.currentText()).strip()) is None:
-            self.ui.Textline_code.setText("Введите imap")
+            self.ui.Textline_code.setText("Enter imap")
             return
         if len(str(self.ui.Textline_regular.currentText()).strip()) < 1:
-            self.ui.Textline_code.setText("Введите RegExp")
+            self.ui.Textline_code.setText("Enter RegExp")
             return
 
         try:
@@ -47,7 +47,7 @@ class User_UI(QMainWindow):
             USERNAME = split_string[0]
             PASSWORD = split_string[1]
         except IndexError:
-            self.ui.Textline_code.setText("Неверный формат Log:Pass")
+            self.ui.Textline_code.setText("Incorrect Log:Pass")
             return
 
         regular_string = str(self.ui.Textline_regular.currentText()).strip()
@@ -87,7 +87,7 @@ class User_UI(QMainWindow):
         pyperclip.copy(self.ui.Textline_code.text())
 
         self.ui.Textline_code.setEnabled(False)
-        self.ui.Textline_code.setText("Скопировано")
+        self.ui.Textline_code.setText("Copied")
 
         QTimer.singleShot(1000, lambda: self.ui.Textline_code.setText(code))
         QTimer.singleShot(1000, lambda: self.ui.Textline_code.setEnabled(True))

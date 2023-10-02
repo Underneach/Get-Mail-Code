@@ -50,7 +50,7 @@ class GetCode(QThread):
                         try:
                             text = part.get_payload(decode=True).decode('latin-1')
                         except UnicodeDecodeError:
-                            self.send_code.emit("Ошибка декодирования")
+                            self.send_code.emit("Decode error")
                             return
         else:
             try:
@@ -59,7 +59,7 @@ class GetCode(QThread):
                 try:
                     text = email_message.get_payload(decode=True).decode('latin-1')
                 except UnicodeDecodeError:
-                    self.send_code.emit("Ошибка декодирования")
+                    self.send_code.emit("Decode error")
                     return
 
         mail.close()
@@ -72,7 +72,7 @@ class GetCode(QThread):
             email_text = self.get_last_email_text(self.IMAP_SERVER, self.USERNAME, self.PASSWORD)
 
             if email_text is None:
-                self.send_code.emit("Почтовый ящик пуст")
+                self.send_code.emit("Mailbox is empty")
                 return
 
             match = re.search(self.regular_string, email_text)
@@ -82,11 +82,11 @@ class GetCode(QThread):
                 self.send_code.emit(code.strip()[:15].replace("\n", ""))
 
             else:
-                self.send_code.emit("Код не найден.")
+                self.send_code.emit("Code not found")
 
         except imaplib.IMAP4_SSL.error:
-            self.send_code.emit("Ошибка подключения")
+            self.send_code.emit("Connection error")
         except imaplib.IMAP4.error:
-            self.send_code.emit("Неверные данные")
+            self.send_code.emit("Login error")
         except Exception as e:
-            self.send_code.emit(f"Ошибка {e}")
+            self.send_code.emit(f"Error {e}")
