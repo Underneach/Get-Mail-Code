@@ -1,6 +1,6 @@
-# Get-Mail-Code-Rambler
+# GetMail
 
-![image](https://github.com/Underneach/Get-Mail-Code/assets/137613889/dffd85fa-5c83-49fc-aa7f-925524c49be9)
+![image](https://github.com/Underneach/Get-Mail-Code/assets/137613889/1766eb66-41f2-4347-951b-0b88001e4c31)
 
     + Ускоряет ручную регистрацию акков с получением кода через письмо на почту
     + Работа с почтой выполняется в отдельном потоке через IMAP
